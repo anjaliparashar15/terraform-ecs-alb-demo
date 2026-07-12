@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('Hello from Terraform ECS ALB Demo');
+  res.send('Saransh is a good boy');
 });
 
 app.listen(3000, () => {

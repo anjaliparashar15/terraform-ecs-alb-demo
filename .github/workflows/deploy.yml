@@ -1,0 +1,52 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: terraform-ecs-demo
+  ECS_CLUSTER: terraform-ecs-cluster
+  ECS_SERVICE: terraform-ecs-service
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t $ECR_REPOSITORY:v1 ./app
+
+      - name: Tag Docker Image
+        run: |
+          docker tag $ECR_REPOSITORY:v1 \
+          054129814226.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPOSITORY:v1
+
+      - name: Push Docker Image
+        run: |
+          docker push \
+          054129814226.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPOSITORY:v1
+
+      - name: Force New Deployment
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment
